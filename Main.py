@@ -94,6 +94,12 @@ class Window(QMainWindow):
         self.ui.setParent(self)
         self.dw.setParent(self)
 
+        self.dwWide = self.wide # draw window Wide
+        self.dwHigh = self.heigh/2
+
+        self.dwxCenter = self.dwWide/2 # draw window x center
+        self.dwyCenter = self.dwHigh/2 # draw window y center
+
         self.dw.setFixedSize(800,250)
 
         self.ui.setFixedSize(800,250)
@@ -129,11 +135,19 @@ class Window(QMainWindow):
         self.BB1Line = QLineF()
 
         self.listOfSIgns = ["2F", "F", "F","2F"]
-        self.listOfDots = [QPoint(153,int(self.heigh/4)),QPoint(277,int(self.heigh/4)),QPoint(525,int(self.heigh/4)),QPoint(676,int(self.heigh/4))]
-        self.listOfLittleDots = [QPoint(92,int(self.heigh/4)),QPoint(215,int(self.heigh/4)),QPoint(337,int(self.heigh/4)),QPoint(462,int(self.heigh/4)),QPoint(616,int(self.heigh/4)),QPoint(738,int(self.heigh/4))]
+        self.listOfDots = []
+        for dot in range(4):
+            self.listOfDots.append(QPoint(int(30+ (self.dwWide-(30*2))/4/2   +  (  (self.dwWide-(30*2))/4   )*dot),   int(self.dwyCenter)))
 
+        self.listOfLittleDots = [] #маленькие серые точки нужны для красоты
+        for dot in range(12):
+            self.listOfLittleDots.append(QPoint(int(30+ (self.dwWide-(30*2))/12/2   +  (  (self.dwWide-(30*2))/12  )*dot),   int(self.dwyCenter)))
+        #self.listOfDots = [QPoint(153,int(self.heigh/4)),QPoint(277,int(self.heigh/4)),QPoint(525,int(self.heigh/4)),QPoint(676,int(self.heigh/4))]
+        #self.listOfLittleDots = [QPoint(92,int(self.heigh/4)),QPoint(215,int(self.heigh/4)),QPoint(337,int(self.heigh/4)),QPoint(462,int(self.heigh/4)),QPoint(616,int(self.heigh/4)),QPoint(738,int(self.heigh/4))]
 
-    def paintEvent(self,event):
+        
+
+    def paintEvent(self,event): 
         self.painter = QPainter(self)
         self.painter.setPen(QPen(Qt.black, 3, Qt.SolidLine))
         self.DrawGui()
@@ -145,272 +159,214 @@ class Window(QMainWindow):
     def DrawLogic(self):
 
         #Рисуем объект ОСЬ Y ИДЕТ СВЕРХУ ВНИЗ!!!!!!!!!!!
-        self.painter.setPen(QPen(Qt.black, 3, Qt.SolidLine))
-        self.APoint = QPoint(int(self.objX),int(self.objY-self.objHigh))
-        self.BPoint = QPoint(int(self.objX),int(self.objY))
+        
+        self.APoint = QPoint(int(self.objX),int(self.objY-self.objHigh)) # верхушка объекта
+        self.BPoint = QPoint(int(self.objX),int(self.objY)) # основание объекта
 
-        self.painter.drawLine(self.APoint,self.BPoint)
 
-        if self.objHigh < 0:
-            self.painter.drawLine(int(self.objX-5),int(self.objY-self.objHigh-5),int(self.objX),int(self.objY-self.objHigh))
-            self.painter.drawLine(int(self.objX),int(self.objY-self.objHigh),int(self.objX+5),int(self.objY-self.objHigh-5))
-        elif self.objHigh > 0:
-            self.painter.drawLine(int(self.objX-5),int(self.objY-self.objHigh+5),int(self.objX),int(self.objY-self.objHigh))
-            self.painter.drawLine(int(self.objX),int(self.objY-self.objHigh),int(self.objX+5),int(self.objY-self.objHigh+5))
+        self.DrawObj(self.APoint, self.BPoint) #рисуем объект
 
-        self.painter.drawLine(int(self.objX-5),int(self.objY),int(self.objX+5),int(self.objY))
         self.painter.setPen(QPen(Qt.gray, 3, Qt.SolidLine))
 
         if self.LenseType == "O":
-        # Изображение точки А
+        # Изображение точки А1 и линий АА1, А-линза-F-A1
+            
+            if self.APoint.x() < self.dwxCenter and  self.APoint.y() < self.dwyCenter: #2 четверть
+                x2 = ((self.dwxCenter - self.APoint.x()) * (self.dwyCenter))/(self.dwyCenter - self.APoint.y()) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-            if self.APoint.x() < self.wide/2 and  self.APoint.y() < self.heigh/4: #2 четверть
-                x = (((self.wide/2)-self.APoint.x())*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.APoint.y())
-                x += self.wide/2
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))# Рисуем луч от А через О
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))
-
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.listOfDots[2].x() - self.wide/2)*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.APoint.y())
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.listOfDots[2].x() - self.dwxCenter)*self.dwyCenter)/(self.dwyCenter - self.APoint.y()) # Xa1 = (Xf*Ya1)/Yf
                 a1 += self.listOfDots[2].x()
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))# Рисуем отрезок от А до линзы и оттуда луч через F
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(self.dwHigh))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
+
+                self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
+            
+                
+
+
+            elif self.APoint.x() < self.dwxCenter and  self.APoint.y() > self.dwyCenter:#3 четверть
+
+                x2 = ((self.dwxCenter - self.APoint.x()) * (self.dwyCenter))/(self.APoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
+
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(1))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
+
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.listOfDots[2].x() - self.dwxCenter)*self.dwyCenter)/(self.APoint.y() - self.dwyCenter) # Xa1 = (Xf*Ya1)/Yf
+                a1 += self.listOfDots[2].x()
+
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(1))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
 
-
-            elif self.APoint.x() < self.wide/2 and  self.APoint.y() > self.heigh/4:#3 четверть
-                x = (((self.wide/2)-self.APoint.x()) * self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                x += self.wide/2
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(1)) 
-
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(1))
-
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.listOfDots[2].x() - (self.wide/2))*(self.heigh/2-self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                a1 += self.listOfDots[2].x()
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),1)
-
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),1)
-
-                self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
-
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
 
             elif self.APoint.x() > self.wide/2 and  self.APoint.y() < self.heigh/4:  # 1 четверть
-                x = ((self.APoint.x() - (self.wide/2))*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.APoint.y())
-                x = self.wide/2 - x
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))
+                x2 = (self.APoint.x() - self.dwxCenter) * (self.dwyCenter)/(self.dwyCenter - self.APoint.y()) # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.wide/2 - self.listOfDots[1].x())*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.APoint.y())
-                a1 = self.wide/2 - (self.wide/2 - self.listOfDots[1].x()) - a1
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.dwxCenter - self.listOfDots[1].x()) * self.dwyCenter)/(self.dwyCenter - self.APoint.y()) # Xa1 = (Xf*Ya1)/Yf
+                a1 = self.listOfDots[1].x() - a1
+
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(self.dwHigh))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
+
+                
 
             elif self.APoint.x() > self.wide/2 and  self.APoint.y() > self.heigh/4:  # 4 четверть
-                x = ((self.APoint.x() - (self.wide/2)) * self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                x = self.wide/2 - x
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(1))
+                x2 = ((self.APoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.APoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(1))
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(1))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.wide/2 - self.listOfDots[1].x())*(self.heigh/2-self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                a1 = self.wide/2 - (self.wide/2 - self.listOfDots[1].x()) - a1
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),0)
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.dwxCenter - self.listOfDots[1].x()) * self.dwyCenter)/(self.APoint.y() - self.dwyCenter) # Xa1 = (Xf*Ya1)/Yf
+                a1 = self.listOfDots[1].x() - a1
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),0)
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(0))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
 
+
+
+
+
+            #Определение пересечений и строительство линий если изображение мнимое
+
+            if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection: # Если линии пересекаются
+                self.Is_Minmoe = False
+                self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] # Находим пересечение
+                self.painter.drawPoint(self.A1Point)
+            elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection: # Если линии НЕ пересекаются (я не пишу else т.к линии могут быть паралельны!)
+                self.Is_Minmoe = True
+                self.A1Point = self.FA1Line.intersects(self.AA1Line)[1]
+                #col = self.FA1Line.intersects(self.AA1Line)[1]
+                self.painter.drawPoint(self.A1Point)
+                #self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
+                     
+                self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
+                self.AA1Line.setP1(self.A1Point)
+                self.FA1Line.setP1(self.A1Point)
+                self.painter.drawLines([self.AA1Line,self.FA1Line])
+
+        
+           
+                    
             # Изображение точки В
             self.painter.setPen(QPen(Qt.gray, 3, Qt.SolidLine))
 
             if self.BPoint.x() < self.wide/2 and  self.BPoint.y() > self.heigh/4:
-                x = (((self.wide/2)-self.BPoint.x()) * self.heigh/4)/(self.BPoint.y() - self.heigh/4) # B в 3 четверти
-                x += self.wide/2
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(1)) 
+              
+                x2 = ((self.dwxCenter - self.BPoint.x()) * (self.dwyCenter))/(self.BPoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(1))
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(1))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.listOfDots[2].x() - (self.wide/2))*(self.heigh/2-self.heigh/4)/(self.BPoint.y() - self.heigh/4)
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.listOfDots[2].x() - self.dwxCenter)*self.dwyCenter)/(self.BPoint.y() - self.dwyCenter) # Xb1 = (Xf*Yb1)/Yf
                 b1 += self.listOfDots[2].x()
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),1)
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),1)
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(1))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.drawPoint(self.B1Point) # Находим пересечение
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = col
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line])
+                
 
             elif self.BPoint.x() < self.wide/2 and  self.BPoint.y() < self.heigh/4:# В во 2 четтверти
-                x = (((self.wide/2)-self.BPoint.x())*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.BPoint.y())
-                x += self.wide/2
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))# Рисуем луч от А через О
+                x2 = ((self.dwxCenter - self.BPoint.x()) * (self.dwyCenter))/(self.dwyCenter - self.BPoint.y()) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.listOfDots[2].x() - self.wide/2)*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.BPoint.y())
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.listOfDots[2].x() - self.dwxCenter)*self.dwyCenter)/(self.dwyCenter - self.BPoint.y()) # Xb1 = (Xf*Yb1)/Yf
                 b1 += self.listOfDots[2].x()
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))# Рисуем отрезок от А до линзы и оттуда луч через F
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(self.dwHigh))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line]) 
+                 
+
+
 
             elif self.BPoint.x() > self.wide/2 and  self.BPoint.y() < self.heigh/4:  # В в 1 четверти
-                x = ((self.BPoint.x() - (self.wide/2))*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.BPoint.y())
-                x = self.wide/2 - x
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))
+                x2 = ((self.BPoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.dwyCenter - self.BPoint.y()) # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.wide/2 - self.listOfDots[1].x())*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.BPoint.y())
-                b1 = self.wide/2 - (self.wide/2 - self.listOfDots[1].x()) - b1
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.dwxCenter - self.listOfDots[1].x()) * self.dwyCenter)/(self.dwyCenter - self.BPoint.y()) # Xb1 = (Xf*Yb1)/Yf
+                b1 = self.listOfDots[1].x() - b1
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(self.dwHigh))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line])
+                
+
+
+
 
             elif self.BPoint.x() > self.wide/2 and  self.BPoint.y() > self.heigh/4:  # B в 4 четверти
-                x = ((self.BPoint.x() - (self.wide/2)) * self.heigh/4)/(self.BPoint.y() - self.heigh/4)
-                x = self.wide/2 - x
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(1))
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(1))
+                x2 = ((self.BPoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.BPoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.wide/2 - self.listOfDots[1].x())*(self.heigh/2-self.heigh/4)/(self.BPoint.y() - self.heigh/4)
-                b1 = self.wide/2 - (self.wide/2 - self.listOfDots[1].x()) - b1
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),0)
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(1))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),0)
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.dwxCenter - self.listOfDots[1].x()) * self.dwyCenter)/(self.BPoint.y() - self.dwyCenter) # Xb1 = (Xf*Yb1)/Yf
+                b1 = self.listOfDots[1].x() - b1
+
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(0))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line])
+
+                #Определение пересечений и строительство линий если изображение мнимое
+
+            if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
+                self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
+                self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
+                self.Is_Minmoe = False
+            elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
+                self.Is_Minmoe = True
+                col = self.FB1Line.intersects(self.BB1Line)[1]
+                self.painter.drawPoint(col)
+                self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
+                self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
+                self.BB1Line.setP1(col)
+                self.FB1Line.setP1(col)
+                self.painter.drawLines([self.BB1Line,self.FB1Line])
 
             if self.BPoint.y() == self.heigh/4 :
                 self.B1Point = QPoint(int(self.A1Point.x()),int(self.heigh/4))
@@ -418,285 +374,199 @@ class Window(QMainWindow):
         elif self.LenseType == "I":
             # Изображение точки А
             if self.APoint.x() < self.wide/2 and  self.APoint.y() < self.heigh/4: #2 четверть
-                x = (((self.wide/2)-self.APoint.x())*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.APoint.y())
-                x += self.wide/2
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))# Рисуем луч от А через О
+                x2 = ((self.dwxCenter - self.APoint.x()) * (self.dwyCenter))/(self.dwyCenter - self.APoint.y()) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.listOfDots[1].x() - (self.wide/2))*(self.heigh/2-self.heigh/4)/(self.APoint.y() - self.heigh/4)
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.listOfDots[1].x() - self.dwxCenter) * self.dwyCenter)/(self.APoint.y() - self.dwyCenter) # Xa1 = (Xf*Ya1)/Yf
                 a1 += self.listOfDots[1].x()
-                self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),1)
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),1)
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(1))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
 
 
             elif self.APoint.x() < self.wide/2 and  self.APoint.y() > self.heigh/4:#3 четверть
-                x = (((self.wide/2)-self.APoint.x()) * self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                x += self.wide/2
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(1)) 
+                x2 = ((self.dwxCenter - self.APoint.x()) * (self.dwyCenter))/(self.APoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(1))
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(1))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.listOfDots[1].x() - self.wide/2)*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.APoint.y())
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.listOfDots[1].x() - self.dwxCenter) * self.dwyCenter)/(self.dwyCenter - self.APoint.y()) # Xa1 = (Xf*Ya1)/Yf
                 a1 += self.listOfDots[1].x()
-                self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))# Рисуем отрезок от А до линзы и оттуда луч через F
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(self.dwHigh))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
+
 
             elif self.APoint.x() > self.wide/2 and  self.APoint.y() < self.heigh/4:  # 1 четверть
-                x = ((self.APoint.x() - (self.wide/2))*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.APoint.y())
-                x = self.wide/2 - x
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))
+                
+                x2 = ((self.APoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.dwyCenter - self.APoint.y())  # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(self.heigh/2))
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.wide/2 - self.listOfDots[2].x())*(self.heigh/2-self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                a1 = self.wide/2 - (self.wide/2 - self.listOfDots[2].x()) - a1
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),0)
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.dwxCenter - self.listOfDots[2].x()) * self.dwyCenter)/(self.APoint.y() - self.dwyCenter) # Xa1 = (Xf*Ya1)/Yf
+                a1 = self.listOfDots[2].x() - a1
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),0)
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(0))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
+
 
             elif self.APoint.x() > self.wide/2 and  self.APoint.y() > self.heigh/4:  # 4 четверть
-                x = ((self.APoint.x() - (self.wide/2)) * self.heigh/4)/(self.APoint.y() - self.heigh/4)
-                x = self.wide/2 - x
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(x),int(1))
 
-                self.AA1Line = QLineF(self.APoint.x(),self.APoint.y(),int(x),int(1))
+                x2 = ((self.APoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.APoint.y() - self.dwyCenter)  # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.painter.drawLine(self.APoint.x(),self.APoint.y(),int(self.wide/2),int(self.APoint.y()))
-                a1 = (self.wide/2 - self.listOfDots[2].x())*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.APoint.y())
-                a1 = self.wide/2 - (self.wide/2 - self.listOfDots[2].x()) - a1
-                self.painter.drawLine(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))
+                self.AA1Line = QLineF(self.APoint.x(), self.APoint.y(), int(x2), int(1))# Рисуем луч от А через О
+                self.painter.drawLine(self.AA1Line)
 
-                self.FA1Line = QLineF(int(self.wide/2),int(self.APoint.y()),int(a1),int(self.heigh/2))
+                self.painter.drawLine(self.APoint.x(), self.APoint.y(), int(self.dwxCenter), int(self.APoint.y())) # Рисуем отрезок от А до линзы
+                a1 = ((self.dwxCenter - self.listOfDots[2].x()) * self.dwyCenter)/(self.dwyCenter - self.APoint.y()) # Xa1 = (Xf*Ya1)/Yf
+                a1 = self.listOfDots[2].x() - a1
+
+                self.FA1Line = QLineF(int(self.dwxCenter), int(self.APoint.y()), int(a1), int(self.dwHigh))
+                self.painter.drawLine(self.FA1Line) # Рисуем отрезок линзы от до a1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FA1Line.intersects(self.AA1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
-                    self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.AA1Line.setP1(col)
-                    self.FA1Line.setP1(col)
-                    self.painter.drawLines([self.AA1Line,self.FA1Line])
+
+
+
+            if self.FA1Line.intersects(self.AA1Line)[0] == QLineF.BoundedIntersection:
+                self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1]) # Находим пересечение
+                self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
+                self.Is_Minmoe = False
+            elif self.FA1Line.intersects(self.AA1Line)[0] == QLineF.UnboundedIntersection:
+                self.Is_Minmoe = True
+                col = self.FA1Line.intersects(self.AA1Line)[1]
+                self.painter.drawPoint(col)
+                self.painter.drawPoint(self.FA1Line.intersects(self.AA1Line)[1])
+                self.A1Point = self.FA1Line.intersects(self.AA1Line)[1] 
+                self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
+                self.AA1Line.setP1(col)
+                self.FA1Line.setP1(col)
+                self.painter.drawLines([self.AA1Line,self.FA1Line])
 
             # Изображение точки В
             self.painter.setPen(QPen(Qt.gray, 3, Qt.SolidLine))
 
-            if self.BPoint.x() < self.wide/2 and  self.BPoint.y() > self.heigh/4:
-                x = (((self.wide/2)-self.BPoint.x()) * self.heigh/4)/(self.BPoint.y() - self.heigh/4) # B в 3 четверти
-                x += self.wide/2
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(1)) 
+            if self.BPoint.x() < self.wide/2 and  self.BPoint.y() > self.heigh/4:# B в 3 четверти
+                x2 = ((self.dwxCenter - self.BPoint.x()) * (self.dwyCenter))/(self.BPoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(1))
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(1))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.listOfDots[1].x() - self.wide/2)*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.BPoint.y())
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.listOfDots[1].x() - self.dwxCenter)*self.dwyCenter)/(self.dwyCenter - self.BPoint.y()) # Xb1 = (Xf*Yb1)/Yf
                 b1 += self.listOfDots[1].x()
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))# Рисуем отрезок от А до линзы и оттуда луч через F
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(self.dwHigh))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.drawPoint(self.B1Point) # Находим пересечение
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = col
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line])
+
+                
 
             elif self.BPoint.x() < self.wide/2 and  self.BPoint.y() < self.heigh/4:# В во 2 четтверти
-                x = (((self.wide/2)-self.BPoint.x())*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.BPoint.y())
-                x += self.wide/2
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))# Рисуем луч от А через О
+                
+                x2 = ((self.dwxCenter - self.BPoint.x()) * (self.dwyCenter))/(self.dwyCenter - self.BPoint.y()) # x2 = (x1*y2)/y1
+                x2 += self.dwxCenter
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.listOfDots[1].x() - (self.wide/2))*(self.heigh/2-self.heigh/4)/(self.BPoint.y() - self.heigh/4)
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.listOfDots[1].x() - self.dwxCenter)*self.dwyCenter)/(self.BPoint.y() - self.dwyCenter) # Xb1 = (Xf*Yb1)/Yf
                 b1 += self.listOfDots[1].x()
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),1)
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),1)
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(1))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line]) 
+                
 
             elif self.BPoint.x() > self.wide/2 and  self.BPoint.y() < self.heigh/4:  # В в 1 четверти
-                x = ((self.BPoint.x() - (self.wide/2))*(self.heigh/2-self.heigh/4))/(self.heigh/4 -self.BPoint.y())
-                x = self.wide/2 - x
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(self.heigh/2))
+                x2 = ((self.BPoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.dwyCenter - self.BPoint.y()) # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.wide/2 - self.listOfDots[2].x())*(self.heigh/2-self.heigh/4)/(self.BPoint.y() - self.heigh/4)
-                b1 = self.wide/2 - (self.wide/2 - self.listOfDots[2].x()) - b1
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),0)
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(self.dwHigh))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),0)
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.dwxCenter - self.listOfDots[2].x()) * self.dwyCenter)/(self.BPoint.y() - self.dwyCenter) # Xb1 = (Xf*Yb1)/Yf
+                b1 = self.listOfDots[2].x() - b1
+
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(0))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line])
+                
 
             elif self.BPoint.x() > self.wide/2 and  self.BPoint.y() > self.heigh/4:  # B в 4 четверти
-                x = ((self.BPoint.x() - (self.wide/2)) * self.heigh/4)/(self.BPoint.y() - self.heigh/4)
-                x = self.wide/2 - x
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(x),int(1))
+                x2 = ((self.BPoint.x() - self.dwxCenter) * (self.dwyCenter))/(self.BPoint.y() - self.dwyCenter) # x2 = (x1*y2)/y1
+                x2 = self.dwxCenter - x2
 
-                self.BB1Line = QLineF(self.BPoint.x(),self.BPoint.y(),int(x),int(1))
+                self.BB1Line = QLineF(self.BPoint.x(), self.BPoint.y(), int(x2), int(1))# Рисуем луч от B через О
+                self.painter.drawLine(self.BB1Line)
 
-                self.painter.drawLine(self.BPoint.x(),self.BPoint.y(),int(self.wide/2),int(self.BPoint.y()))
-                b1 = (self.wide/2 - self.listOfDots[2].x())*(self.heigh/2-self.heigh/4)/(self.heigh/4 - self.BPoint.y())
-                b1 = self.wide/2 - (self.wide/2 - self.listOfDots[2].x()) - b1
-                self.painter.drawLine(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))
+                self.painter.drawLine(self.BPoint.x(), self.BPoint.y(), int(self.dwxCenter), int(self.BPoint.y())) # Рисуем отрезок от B до линзы
+                b1 = ((self.dwxCenter - self.listOfDots[2].x()) * self.dwyCenter)/(self.dwyCenter - self.BPoint.y()) # Xb1 = (Xf*Yb1)/Yf
+                b1 = self.listOfDots[2].x() - b1
 
-                self.FB1Line = QLineF(int(self.wide/2),int(self.BPoint.y()),int(b1),int(self.heigh/2))
+                self.FB1Line = QLineF(int(self.dwxCenter), int(self.BPoint.y()), int(b1), int(self.dwHigh))
+                self.painter.drawLine(self.FB1Line) # Рисуем отрезок линзы от до b1 через F
 
                 self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
 
-                if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
-                    self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.Is_Minmoe = False
-                elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
-                    self.Is_Minmoe = True
-                    col = self.FB1Line.intersects(self.BB1Line)[1]
-                    self.painter.drawPoint(col)
-                    self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
-                    self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
-                    self.BB1Line.setP1(col)
-                    self.FB1Line.setP1(col)
-                    self.painter.drawLines([self.BB1Line,self.FB1Line])
+
+
+
+
+            if self.FB1Line.intersects(self.BB1Line)[0] == QLineF.BoundedIntersection:
+                self.painter.drawPoint(self.FB1Line.intersects(self.BB1Line)[1]) # Находим пересечение
+                self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
+                self.Is_Minmoe = False
+            elif self.FB1Line.intersects(self.BB1Line)[0] == QLineF.UnboundedIntersection:
+                self.Is_Minmoe = True
+                col = self.FB1Line.intersects(self.BB1Line)[1]
+                self.painter.drawPoint(col)
+                self.B1Point = self.FB1Line.intersects(self.BB1Line)[1] 
+                self.painter.setPen(QPen(Qt.gray, 3, Qt.DashLine))
+                self.BB1Line.setP1(col)
+                self.FB1Line.setP1(col)
+                self.painter.drawLines([self.BB1Line,self.FB1Line])
 
             if self.BPoint.y() == self.heigh/4 :
                 self.B1Point = QPoint(int(self.A1Point.x()),int(self.heigh/4))
 
         # Рисуем линии
         
-
-        self.painter.setPen(QPen(Qt.black, 3, Qt.SolidLine))
-        if int(self.BPoint.y()) == int(self.heigh/4):
-            self.painter.drawLine(int(self.A1Point.x()),int(self.A1Point.y()),int(self.A1Point.x()),int(self.heigh/4))
-            if self.A1Point.y() < self.heigh/4:
-                self.painter.drawLine(int(self.A1Point.x()-5),int(self.A1Point.y()+5),int(self.A1Point.x()),int(self.A1Point.y()))
-                self.painter.drawLine(int(self.A1Point.x()),int(self.A1Point.y()),int(self.A1Point.x()+5),int(self.A1Point.y()+5))
-            elif self.A1Point.y() > self.heigh/4:
-                self.painter.drawLine(int(self.A1Point.x()+5),int(self.A1Point.y()-5),int(self.A1Point.x()),int(self.A1Point.y()))
-                self.painter.drawLine(int(self.A1Point.x()),int(self.A1Point.y()),int(self.A1Point.x()-5),int(self.A1Point.y()-5))
-        else:
-            self.painter.drawLine(int(self.B1Point.x()-10),int(self.B1Point.y()), int(self.B1Point.x()+10),int(self.B1Point.y()))
-            self.painter.drawLine(self.A1Point,self.B1Point)
-            if self.A1Point.y() - self.B1Point.y() < 0:
-                self.painter.drawLine(int(self.A1Point.x()-5),int(self.A1Point.y()+5),int(self.A1Point.x()),int(self.A1Point.y()))
-                self.painter.drawLine(int(self.A1Point.x()),int(self.A1Point.y()),int(self.A1Point.x()+5),int(self.A1Point.y()+5))
-            elif self.A1Point.y() - self.B1Point.y() > 0:
-                self.painter.drawLine(int(self.A1Point.x()+5),int(self.A1Point.y()-5),int(self.A1Point.x()),int(self.A1Point.y()))
-                self.painter.drawLine(int(self.A1Point.x()),int(self.A1Point.y()),int(self.A1Point.x()-5),int(self.A1Point.y()-5))
-
+        self.DrawObj(self.A1Point,self.B1Point)
 
             # Характеристика 1. Прямое/Перевёрнутое 2. Уменьш/Увелич 3. Действ/Мнимое 4. По одну/Разные стороны
 
-        half = int(self.heigh/4)
+        half = int(self.dwyCenter)
             
 
         if (self.APoint.y() > half and self.A1Point.y() > half) or (self.APoint.y() < half and self.A1Point.y() < half):
@@ -711,7 +581,7 @@ class Window(QMainWindow):
             self.label3.setText("3. Мнимое")
         else: self.label3.setText("3. Действ.")
 
-        if (self.APoint.x() < self.wide/2 and self.A1Point.x() < self.wide/2) or (self.APoint.x() > self.wide/2 and self.A1Point.x() > self.wide/2):
+        if (self.APoint.x() < self.dwxCenter and self.A1Point.x() < self.wide/2) or (self.APoint.x() > self.dwxCenter and self.A1Point.x() > self.dwxCenter):
             self.label4.setText("4. По одну сторону")
         else: self.label4.setText("4. По разные стороны")
 
@@ -719,32 +589,34 @@ class Window(QMainWindow):
 
 
     def DrawGui(self):
-        self.painter.drawLine(30,int(self.heigh/4),self.wide-30,int(self.heigh/4))
-        self.painter.drawLine(int(self.wide/2),int(self.heigh/4)-50,int(self.wide/2),int(self.heigh/4)+50)
+        self.painter.drawLine(30,int(self.dwyCenter),self.wide-30,int(self.dwyCenter))#основная линия
+        self.painter.drawLine(int(self.dwxCenter),int(self.dwyCenter)-50,int(self.dwxCenter),int(self.dwyCenter)+50)#Линза
 
-        # Стрелочки
+        # Стрелочки у линзы
         if self.LenseType == "O":
-            self.painter.drawLine(int(self.wide/2)-10,int(self.heigh/4)+40,int(self.wide/2),int(self.heigh/4)+50)
-            self.painter.drawLine(int(self.wide/2),int(self.heigh/4)+50,int(self.wide/2)+10,int(self.heigh/4)+40)
+            self.painter.drawLine(int(self.dwxCenter)-10,int(self.dwyCenter)+40,int(self.dwxCenter),int(self.dwyCenter)+50)
+            self.painter.drawLine(int(self.dwxCenter),int(self.dwyCenter)+50,int(self.dwxCenter)+10,int(self.dwyCenter)+40)
 
-            self.painter.drawLine(int(self.wide/2)-10,int(self.heigh/4)-40,int(self.wide/2),int(self.heigh/4)-50)
-            self.painter.drawLine(int(self.wide/2),int(self.heigh/4)-50,int(self.wide/2)+10,int(self.heigh/4)-40)
+            self.painter.drawLine(int(self.dwxCenter)-10,int(self.dwyCenter)-40,int(self.dwxCenter),int(self.dwyCenter)-50)
+            self.painter.drawLine(int(self.dwxCenter),int(self.dwyCenter)-50,int(self.dwxCenter)+10,int(self.dwyCenter)-40)
         elif self.LenseType == "I":
-            self.painter.drawLine(int(self.wide/2)-10,int(self.heigh/4)+60,int(self.wide/2),int(self.heigh/4)+50)
-            self.painter.drawLine(int(self.wide/2),int(self.heigh/4)+50,int(self.wide/2)+10,int(self.heigh/4)+60)
+            self.painter.drawLine(int(self.dwxCenter)-10,int(self.dwyCenter)+60,int(self.dwxCenter),int(self.dwyCenter)+50)
+            self.painter.drawLine(int(self.dwxCenter),int(self.dwyCenter)+50,int(self.dwxCenter)+10,int(self.dwyCenter)+60)
 
-            self.painter.drawLine(int(self.wide/2)-10,int(self.heigh/4)-60,int(self.wide/2),int(self.heigh/4)-50)
-            self.painter.drawLine(int(self.wide/2),int(self.heigh/4)-50,int(self.wide/2)+10,int(self.heigh/4)-60)
+            self.painter.drawLine(int(self.dwxCenter)-10,int(self.dwyCenter)-60,int(self.dwxCenter),int(self.dwyCenter)-50)
+            self.painter.drawLine(int(self.dwxCenter),int(self.dwyCenter)-50,int(self.dwxCenter)+10,int(self.dwyCenter)-60)
             
 
+
+        self.painter.setPen(QPen(Qt.gray, 3, Qt.SolidLine))
+        for i in self.listOfLittleDots:
+            self.painter.drawPoint(i)
 
         self.painter.setPen(QPen(Qt.black, 7, Qt.SolidLine))
         self.painter.drawPoint(self.OPoint)
         for i in self.listOfDots:
             self.painter.drawPoint(i)
-        self.painter.setPen(QPen(Qt.gray, 3, Qt.SolidLine))
-        for i in self.listOfLittleDots:
-            self.painter.drawPoint(i)
+        
         for i in self.listOfDots:
             self.painter.setPen(QPen(Qt.black, 5, Qt.SolidLine))
             self.painter.drawText(QPoint(i.x()-5,i.y()+20),self.listOfSIgns[self.listOfDots.index(i)])
@@ -754,10 +626,10 @@ class Window(QMainWindow):
 
     def resetButton(self):
         self.objX = 400
-        self.objY = int(self.heigh/4)
+        self.objY = int(self.dwyCenter)
         self.objX = 35
         self.x_slider.setValue(400)
-        self.y_slider.setValue(int(self.heigh/4))
+        self.y_slider.setValue(int(self.dwyCenter))
         self.y_offset.setValue(35)
     def RButton(self):
         RB = self.sender()
@@ -768,9 +640,28 @@ class Window(QMainWindow):
     def changedValue(self):
         self.objX = self.x_slider.value()
     def changedValueY(self):
-        self.objY = int(self.heigh/2 - self.y_slider.value())
+        self.objY = int(self.dwHigh - self.y_slider.value())
     def changedValueOff(self):
         self.objHigh = self.y_offset.value()
+
+    def DrawObj(self, A = QPoint(),B = QPoint(), h = None):
+
+        self.painter.setPen(QPen(Qt.black, 3, Qt.SolidLine))
+        self.painter.drawLine(A,B)
+        x = int(A.x())
+        y = int(B.y())
+        h = int(B.y() - A.y())
+        # стрелочка у объекта
+        if h < 0:
+            self.painter.drawLine(x-5, y-h-5, x, y-h)
+            self.painter.drawLine(x, y-h, x+5, y-h-5)
+        elif h > 0:
+            self.painter.drawLine(x-5, y-h+5, x, y-h)
+            self.painter.drawLine(x, y-h, x+5, y-h+5)
+
+        # дно объекта
+        self.painter.drawLine(x-5, y, x+5, y)
+        
 
 
 
@@ -796,4 +687,4 @@ if __name__ == "__main__":
     application()
 
 
-    class Test:
+    #class Test:
